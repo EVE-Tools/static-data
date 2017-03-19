@@ -33,12 +33,8 @@ func GetLocationsEndpoint(context *gin.Context) {
 		return
 	}
 
-	// Try to get from cache, if error and none returned -> return without data
+	// Try to get from cache, even if none returned, return code 207
 	locations, cacheErr := getLocations(ids.Locations)
-	if cacheErr != nil && len(locations) == 0 {
-		context.AbortWithError(500, cacheErr)
-		return
-	}
 
 	//  Serialize data from cache
 	responseJSON, err := locations.MarshalJSON()
@@ -47,7 +43,7 @@ func GetLocationsEndpoint(context *gin.Context) {
 		return
 	}
 
-	// If there was an error while fetching data, return successfult subset with 207, on succcess 200
+	// If there was an error while fetching data, return successful subset with 207, on succcess 200
 	responseCode := 200
 	if cacheErr != nil {
 		responseCode = 207
