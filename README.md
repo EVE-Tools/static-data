@@ -1,5 +1,5 @@
 # Static Data
-[![Build Status](https://drone.element-43.com/api/badges/EVE-Tools/static-data/status.svg)](https://drone.element-43.com/EVE-Tools/static-data)
+[![Build Status](https://drone.element-43.com/api/badges/EVE-Tools/static-data/status.svg)](https://drone.element-43.com/EVE-Tools/static-data) [![Go Report Card](https://goreportcard.com/badge/github.com/eve-tools/static-data)](https://goreportcard.com/report/github.com/eve-tools/static-data)
 
 This service for [Element43](https://element-43.com) handles all (bulk) requests for static data we currently cannot do via [ESI](https://esi.tech.ccp.is/latest/). At the moment this is restricted to serving uniform location data regarding structures/stations, solar systems, constellations and regions, acting as a kind of best-effort (more on that later) caching proxy for external APIs. Typical requests query around 1,000 locations. Location data is fetched from multiple sources, cached in-memory and persisted to disk. This prevents unnecessary requests to external APIs. Depending on the location's ID, different sources and cache exiprations are used:
 
