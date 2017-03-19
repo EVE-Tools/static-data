@@ -5,7 +5,7 @@ This service for [Element43](https://element-43.com) handles all (bulk) requests
 
 1. Stations, Solar Systems, Constellations, Regions: CREST, 24h expiry
 2. Conquerable Stations: CREST, 1h expiry
-3. Structures (citadels...): (3rd Party API)[https://stop.hammerti.me.uk/citadelhunt/getstarted], fetched in bulk every hour
+3. Structures (citadels...): [3rd Party API](https://stop.hammerti.me.uk/citadelhunt/getstarted), fetched in bulk every hour
 
 Items are not deleted on expiry as the APIs can be flaky or down for extended periods of time. In case a queried entry is expired the proxy tries to retrieve location info for the entry. If the backing API is down, the expired entry is served as a fallback.
 
