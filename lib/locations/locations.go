@@ -10,6 +10,8 @@ import (
 
 	"io/ioutil"
 
+	"github.com/EVE-Tools/market-stats/client"
+	"github.com/EVE-Tools/market-stats/client/universe"
 	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
@@ -81,17 +83,18 @@ func Inititalize(database *bolt.DB) {
 	crestClient.IsTLS = true
 	crestClient.MaxConns = 20
 
-	// Initialize structures
-	go scheduleStructureUpdate()
+	// Initialize static data
+	go scheduleStaticDataUpdate()
 }
 
 // Keep ticking in own goroutine and spawn worker tasks.
-func scheduleStructureUpdate() {
+func scheduleStaticDataUpdate() {
 	ticker := time.NewTicker(30 * time.Minute)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
 		go updateStructures()
+		go updateRegions()
 	}
 }
 
@@ -140,6 +143,52 @@ func updateStructures() {
 	expireAt := time.Now().Unix() + 86400
 	for key, structure := range allStructures {
 		go storeStructure(key, structure, expireAt)
+	}
+}
+
+// Update all structures in cache
+func updateRegions() {
+	logrus.Debug("Downloading regions...")
+
+	// Fetch IDs from ESI
+	regionIDResult, err := client.Default.Universe.GetUniverseRegions(nil)
+	if err != nil {
+		logrus.WithError(err).Error("Could not get regions.")
+		return
+	}
+
+	regionIDs := regionIDResult.Payload
+
+	for _, id := range regionIDs {
+		// Fetch data from ESI and store in cache
+		params := universe.NewGetUniverseRegionsRegionIDParams()
+		params.SetRegionID(int32(id))
+
+		regionResult, err := client.Default.Universe.GetUniverseRegionsRegionID(params)
+		if err != nil {
+			logrus.WithError(err).Error("Could not get region info.")
+			return
+		}
+
+		region := regionResult.Payload
+
+		// Store structures in cache (expire after 1 day, this has no effect)
+		cachedLocation := CachedLocation{
+			ID:        int64(*region.RegionID),
+			ExpiresAt: time.Now().Unix() + 86400,
+			Location: Location{
+				Region: Region{
+					ID:   int64(*region.RegionID),
+					Name: *region.Name,
+				},
+			},
+		}
+
+		err = putIntoCache(cachedLocation)
+		if err != nil {
+			logrus.Warnf("Failed to store region: %s", err.Error())
+			return
+		}
 	}
 }
 
@@ -286,8 +335,8 @@ func fetchLocationFromCache(id int64) (location CachedLocation, needsUpdate bool
 		return CachedLocation{}, true, err
 	}
 
-	// Check if location needs update, citadels are updated via ticker
-	if cachedLocation.ID < 1000000000000 && cachedLocation.ExpiresAt < time.Now().Unix() {
+	// Check if location needs update, citadels and regions are updated via ticker
+	if cachedLocation.ID > 20000000 && cachedLocation.ID < 1000000000000 && cachedLocation.ExpiresAt < time.Now().Unix() {
 		return cachedLocation, true, nil
 	}
 
