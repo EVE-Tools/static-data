@@ -82,6 +82,7 @@ func Inititalize(database *bolt.DB) {
 	crestClient.Name = userAgent
 	crestClient.IsTLS = true
 	crestClient.MaxConns = 20
+	crestClient.ReadTimeout = 2 * time.Second
 
 	// Initialize static data
 	go scheduleStaticDataUpdate()
