@@ -35,7 +35,7 @@ Prefix: `/api/static-data/v1`
 
 URL Pattern | Description
 --- | ---
-`/region/location/` | POST a JSON objct with a key called `locationIDs` containing all the IDs you need info for. It will return the info. Magic!
+`/region/location/` | POST a JSON object with a key called `locationIDs` containing all the IDs you need info for. It will return the info. Magic!
 
 Example output for `{ "locationIDs": [60003760, 30003271, 1022449681307] }`:
 ```json
