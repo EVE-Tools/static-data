@@ -112,8 +112,12 @@ func updateStructures() {
 	logrus.WithFields(logrus.Fields{
 		"time": requestTime,
 	}).Info("Loaded structures.")
-	if err != nil || statusCode != 200 {
+	if err != nil {
 		logrus.Warnf("Could not fetch 3rd party structure API: %s", err.Error())
+		return
+	}
+	if statusCode != 200 {
+		logrus.Warnf("Server returned invalid status: %d", statusCode)
 		return
 	}
 
