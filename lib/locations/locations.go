@@ -10,9 +10,8 @@ import (
 
 	"io/ioutil"
 
-	"github.com/EVE-Tools/market-stats/client"
-	"github.com/EVE-Tools/market-stats/client/universe"
 	"github.com/Sirupsen/logrus"
+	"github.com/antihax/goesi"
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
 	"github.com/valyala/fasthttp"
@@ -55,6 +54,7 @@ func GetLocationsEndpoint(context *gin.Context) {
 }
 
 var db *bolt.DB
+var esiClient goesi.APIClient
 var genericClient fasthttp.Client
 var crestClient fasthttp.HostClient
 var crestSemaphore chan struct{}
@@ -83,6 +83,8 @@ func Inititalize(database *bolt.DB) {
 	crestClient.IsTLS = true
 	crestClient.MaxConns = 20
 	crestClient.ReadTimeout = 2 * time.Second
+
+	esiClient = *goesi.NewAPIClient(nil, userAgent)
 
 	// Initialize static data
 	go scheduleStaticDataUpdate()
@@ -156,35 +158,27 @@ func updateRegions() {
 	logrus.Debug("Downloading regions...")
 
 	// Fetch IDs from ESI
-	regionIDResult, err := client.Default.Universe.GetUniverseRegions(nil)
+	regionIDs, _, err := esiClient.V1.UniverseApi.GetUniverseRegions(nil)
 	if err != nil {
 		logrus.WithError(err).Error("Could not get regions.")
 		return
 	}
 
-	regionIDs := regionIDResult.Payload
-
 	for _, id := range regionIDs {
-		// Fetch data from ESI and store in cache
-		params := universe.NewGetUniverseRegionsRegionIDParams()
-		params.SetRegionID(int32(id))
-
-		regionResult, err := client.Default.Universe.GetUniverseRegionsRegionID(params)
+		region, _, err := esiClient.V1.UniverseApi.GetUniverseRegionsRegionId(id, nil)
 		if err != nil {
 			logrus.WithError(err).Error("Could not get region info.")
 			return
 		}
 
-		region := regionResult.Payload
-
 		// Store structures in cache (expire after 1 day, this has no effect)
 		cachedLocation := CachedLocation{
-			ID:        int64(*region.RegionID),
+			ID:        int64(region.RegionId),
 			ExpiresAt: time.Now().Unix() + 86400,
 			Location: Location{
 				Region: Region{
-					ID:   int64(*region.RegionID),
-					Name: *region.Name,
+					ID:   int64(region.RegionId),
+					Name: region.Name,
 				},
 			},
 		}
