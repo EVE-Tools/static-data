@@ -59,11 +59,11 @@ var genericClient fasthttp.Client
 var crestClient fasthttp.HostClient
 var crestSemaphore chan struct{}
 
-// Inititalize inititalizes infrastructure for locations
-func Inititalize(database *bolt.DB) {
+// Initialize initializes infrastructure for locations
+func Initialize(database *bolt.DB) {
 	db = database
 
-	// Inititalize buckets
+	// Initialize buckets
 	err := db.Update(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists([]byte("locations"))
 		return nil
@@ -72,7 +72,7 @@ func Inititalize(database *bolt.DB) {
 		panic(err)
 	}
 
-	// Inititalize clients
+	// Initialize clients
 	userAgent := "Element43/static-data (element-43.com)"
 
 	genericClient.Name = userAgent

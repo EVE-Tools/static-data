@@ -51,7 +51,7 @@ func startEndpoint(config Config) {
 		panic(err)
 	}
 
-	locations.Inititalize(db)
+	locations.Initialize(db)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
