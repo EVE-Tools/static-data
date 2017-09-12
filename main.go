@@ -6,12 +6,12 @@ import (
 
 	"github.com/EVE-Tools/static-data/lib/locations"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 )
 
 // Config holds the application's configuration info from the environment.

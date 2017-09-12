@@ -10,10 +10,10 @@ import (
 
 	"io/ioutil"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/antihax/goesi"
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 )
 
