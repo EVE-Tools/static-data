@@ -158,14 +158,14 @@ func updateRegions() {
 	logrus.Debug("Downloading regions...")
 
 	// Fetch IDs from ESI
-	regionIDs, _, err := esiClient.V1.UniverseApi.GetUniverseRegions(nil)
+	regionIDs, _, err := esiClient.ESI.UniverseApi.GetUniverseRegions(nil)
 	if err != nil {
 		logrus.WithError(err).Error("Could not get regions.")
 		return
 	}
 
 	for _, id := range regionIDs {
-		region, _, err := esiClient.V1.UniverseApi.GetUniverseRegionsRegionId(id, nil)
+		region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(id, nil)
 		if err != nil {
 			logrus.WithError(err).Error("Could not get region info.")
 			return
