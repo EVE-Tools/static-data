@@ -352,7 +352,7 @@ func updateLocationInCache(id int64) (CachedLocation, error) {
 	}
 
 	// Exclude implausible ID ranges
-	if id < 30000000 || id > 70000000 || (id >= 40000000 && id < 60000000) {
+	if id < 10000000 || id > 64000000 || (id >= 40000000 && id < 60000000) {
 		logrus.Debug(id)
 		return CachedLocation{}, errors.New("not a valid location ID range")
 	}
@@ -364,7 +364,7 @@ func updateLocationInCache(id int64) (CachedLocation, error) {
 	}
 
 	var expireAt int64
-	if id > 6100000 {
+	if id > 61000000 {
 		// Conquerable stations expire after an hour
 		expireAt = time.Now().Unix() + 3600
 	} else {
