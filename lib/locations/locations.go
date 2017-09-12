@@ -357,7 +357,7 @@ func updateLocationInCache(id int64) (CachedLocation, error) {
 		return CachedLocation{}, errors.New("not a valid location ID range")
 	}
 
-	// Rest of requests are requests to CREST's loaction API.
+	// Rest of requests are requests to CREST's location API.
 	rawLocation, err := fetchLocationFromCREST(id)
 	if err != nil {
 		return CachedLocation{}, err
