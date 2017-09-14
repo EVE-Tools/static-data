@@ -60,7 +60,7 @@ var crestClient fasthttp.HostClient
 var crestSemaphore chan struct{}
 
 // Initialize initializes infrastructure for locations
-func Initialize(database *bolt.DB) {
+func Initialize(esiHost string, crestHost string, database *bolt.DB) {
 	db = database
 
 	// Initialize buckets
@@ -78,13 +78,14 @@ func Initialize(database *bolt.DB) {
 	genericClient.Name = userAgent
 
 	crestSemaphore = make(chan struct{}, 20)
-	crestClient.Addr = "crest-tq.eveonline.com:443"
+	crestClient.Addr = fmt.Sprintf("%s:443", crestHost)
 	crestClient.Name = userAgent
 	crestClient.IsTLS = true
 	crestClient.MaxConns = 20
 	crestClient.ReadTimeout = 2 * time.Second
 
 	esiClient = *goesi.NewAPIClient(nil, userAgent)
+	esiClient.ChangeBasePath(fmt.Sprintf("https://%s", esiHost))
 
 	// Initialize static data
 	go scheduleStaticDataUpdate()

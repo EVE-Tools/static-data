@@ -25,6 +25,8 @@ Environment Variable | Default | Description
 LOG_LEVEL | info | Threshold for logging messages to be printed
 PORT | 8000 | Port for the API to listen on
 DB_PATH | static-data.db | Path for storing the persistent location cache
+ESI_HOST | esi.tech.ccp.is | Hostname used for accessing ESI. Change this if you proxy requests. 
+CREST_HOST | crest-tq.eveonline.com | Hostname used for accessing CREST. Change this if you proxy requests.
 
 ## Todo
 - [ ] Seriously, this should not need to exist at all, maybe replace it with something like [Falcor](https://github.com/Netflix/falcor)

@@ -16,9 +16,11 @@ import (
 
 // Config holds the application's configuration info from the environment.
 type Config struct {
-	DBPath   string `default:"static-data.db" envconfig:"db_path"`
-	LogLevel string `default:"info" envconfig:"log_level"`
-	Port     string `default:"8000" envconfig:"port"`
+	DBPath    string `default:"static-data.db" envconfig:"db_path"`
+	LogLevel  string `default:"info" envconfig:"log_level"`
+	Port      string `default:"8000" envconfig:"port"`
+	ESIHost   string `default:"esi.tech.ccp.is" envconfig:"esi_host"`
+	CRESTHost string `default:"crest-tq.eveonline.com" envconfig:"crest_host"`
 }
 
 func main() {
@@ -51,7 +53,7 @@ func startEndpoint(config Config) {
 		panic(err)
 	}
 
-	locations.Initialize(db)
+	locations.Initialize(config.ESIHost, config.CRESTHost, db)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
