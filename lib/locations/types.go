@@ -34,18 +34,21 @@ type Location struct {
 
 // Station contains station info and additional info for structures
 type Station struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	TypeID      int64  `json:"typeId,omitempty"`
-	TypeName    string `json:"typeName,omitempty"`
-	LastSeen    string `json:"lastSeen,omitempty"`
-	Public      bool   `json:"public,omitempty"`
-	FirstSeen   string `json:"firstSeen,omitempty"`
-	Coordinates struct {
-		X float64 `json:"x"`
-		Y float64 `json:"y"`
-		Z float64 `json:"z"`
-	} `json:"position,omitempty"`
+	ID          int64       `json:"id"`
+	Name        string      `json:"name"`
+	TypeID      int64       `json:"typeId,omitempty"`
+	TypeName    string      `json:"typeName,omitempty"`
+	LastSeen    string      `json:"lastSeen,omitempty"`
+	Public      bool        `json:"public,omitempty"`
+	FirstSeen   string      `json:"firstSeen,omitempty"`
+	Coordinates Coordinates `json:"position,omitempty"`
+}
+
+// Coordinates represents coordinate info embedded in stations/structures
+type Coordinates struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	Z float64 `json:"z"`
 }
 
 // Region contains region info
@@ -77,19 +80,15 @@ type AllStructures map[string]Structure
 
 // Structure stores an individual structure from AllStructures.
 type Structure struct {
-	TypeID      int64  `json:"typeId"`
-	Name        string `json:"name"`
-	RegionID    int64  `json:"regionId"`
-	Coordinates struct {
-		X float64 `json:"x"`
-		Y float64 `json:"y"`
-		Z float64 `json:"z"`
-	} `json:"location"`
-	TypeName   string `json:"typeName"`
-	SystemID   int64  `json:"systemId"`
-	LastSeen   string `json:"lastSeen"`
-	SystemName string `json:"systemName"`
-	Public     bool   `json:"public"`
-	FirstSeen  string `json:"firstSeen"`
-	RegionName string `json:"regionName"`
+	TypeID      int64       `json:"typeId"`
+	Name        string      `json:"name"`
+	RegionID    int64       `json:"regionId"`
+	Coordinates Coordinates `json:"location"`
+	TypeName    string      `json:"typeName"`
+	SystemID    int64       `json:"systemId"`
+	LastSeen    string      `json:"lastSeen"`
+	SystemName  string      `json:"systemName"`
+	Public      bool        `json:"public"`
+	FirstSeen   string      `json:"firstSeen"`
+	RegionName  string      `json:"regionName"`
 }

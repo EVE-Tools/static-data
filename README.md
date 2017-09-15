@@ -3,8 +3,8 @@
 
 This service for [Element43](https://element-43.com) handles all (bulk) requests for static data we currently cannot do via [ESI](https://esi.tech.ccp.is/latest/). At the moment this is restricted to serving uniform location data regarding structures/stations, solar systems, constellations and regions, acting as a kind of best-effort (more on that later) caching proxy for external APIs. Typical requests query around 1,000 locations. Location data is fetched from multiple sources, cached in-memory and persisted to disk. This prevents unnecessary requests to external APIs. Depending on the location's ID, different sources and cache exiprations are used:
 
-1. Stations, Solar Systems, Constellations, Regions: CREST, 24h expiry
-2. Conquerable Stations: CREST, 1h expiry
+1. Stations, Solar Systems, Constellations, Regions: ESI, 24h expiry
+2. Conquerable Stations: ESI, 1h expiry
 3. Structures (citadels...): [3rd Party API](https://stop.hammerti.me.uk/citadelhunt/getstarted), fetched in bulk every hour
 
 Items are not deleted on expiry as the APIs can be flaky or down for extended periods of time. In case a queried entry is expired the proxy tries to retrieve location info for the entry. If the backing API is down, the expired entry is served as a fallback.
@@ -26,7 +26,8 @@ LOG_LEVEL | info | Threshold for logging messages to be printed
 PORT | 8000 | Port for the API to listen on
 DB_PATH | static-data.db | Path for storing the persistent location cache
 ESI_HOST | esi.tech.ccp.is | Hostname used for accessing ESI. Change this if you proxy requests. 
-CREST_HOST | crest-tq.eveonline.com | Hostname used for accessing CREST. Change this if you proxy requests.
+STRUCTURE_HUNT_HOST | stop.hammerti.me.uk | Hostname used for accessing the 3rd party structure hunt API. Change this if you proxy requests.
+DISABLE_TLS | false | Only check this if you're proxying API requests and terminate TLS-connections at the proxy.
 
 ## Todo
 - [ ] Seriously, this should not need to exist at all, maybe replace it with something like [Falcor](https://github.com/Netflix/falcor)

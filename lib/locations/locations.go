@@ -1,6 +1,7 @@
 package locations
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
@@ -56,11 +57,10 @@ func GetLocationsEndpoint(context *gin.Context) {
 var db *bolt.DB
 var esiClient goesi.APIClient
 var genericClient fasthttp.Client
-var crestClient fasthttp.HostClient
-var crestSemaphore chan struct{}
+var structureHuntURL string
 
 // Initialize initializes infrastructure for locations
-func Initialize(esiHost string, crestHost string, database *bolt.DB) {
+func Initialize(esiHost string, structureHuntHost string, disableTLS bool, database *bolt.DB) {
 	db = database
 
 	// Initialize buckets
@@ -77,15 +77,15 @@ func Initialize(esiHost string, crestHost string, database *bolt.DB) {
 
 	genericClient.Name = userAgent
 
-	crestSemaphore = make(chan struct{}, 20)
-	crestClient.Addr = fmt.Sprintf("%s:443", crestHost)
-	crestClient.Name = userAgent
-	crestClient.IsTLS = true
-	crestClient.MaxConns = 20
-	crestClient.ReadTimeout = 2 * time.Second
-
 	esiClient = *goesi.NewAPIClient(nil, userAgent)
-	esiClient.ChangeBasePath(fmt.Sprintf("https://%s", esiHost))
+
+	if disableTLS {
+		esiClient.ChangeBasePath(fmt.Sprintf("http://%s:443", esiHost))
+		structureHuntURL = fmt.Sprintf("http://%s:443/api/structure/all", structureHuntHost)
+	} else {
+		esiClient.ChangeBasePath(fmt.Sprintf("https://%s", esiHost))
+		structureHuntURL = fmt.Sprintf("https://%s/api/structure/all", structureHuntHost)
+	}
 
 	// Initialize static data
 	go scheduleStaticDataUpdate()
@@ -110,7 +110,7 @@ func updateStructures() {
 
 	// Fetch with no timeout
 	requestStart := time.Now()
-	statusCode, body, err := genericClient.Get(body, "https://stop.hammerti.me.uk/api/structure/all")
+	statusCode, body, err := genericClient.Get(body, structureHuntURL)
 	requestTime := time.Since(requestStart)
 	logrus.WithFields(logrus.Fields{
 		"time": requestTime,
@@ -358,8 +358,8 @@ func updateLocationInCache(id int64) (CachedLocation, error) {
 		return CachedLocation{}, errors.New("not a valid location ID range")
 	}
 
-	// Rest of requests are requests to CREST's location API.
-	rawLocation, err := fetchLocationFromCREST(id)
+	// Rest of requests are requests to ESI's location API.
+	rawLocation, err := fetchLocationFromESI(id)
 	if err != nil {
 		return CachedLocation{}, err
 	}
@@ -412,37 +412,186 @@ func putIntoCache(cachedLocation CachedLocation) error {
 	return nil
 }
 
-// Fetches a location from CREST.
-func fetchLocationFromCREST(id int64) (Location, error) {
-	logrus.Debugf("Getting location %d from CREST", id)
+// Fetches a location from ESI.
+func fetchLocationFromESI(id int64) (Location, error) {
+	logrus.Debugf("Getting location %d from ESI", id)
 
-	var body []byte
-	url := fmt.Sprintf("https://crest-tq.eveonline.com/universe/locations/%d/", id)
-	crestSemaphore <- struct{}{}
-	requestStart := time.Now()
-	statusCode, body, err := crestClient.Get(body, url)
-	requestTime := time.Since(requestStart)
-	logrus.WithFields(logrus.Fields{
-		"locationID": id,
-		"time":       requestTime,
-	}).Info("Got location from CREST.")
-	<-crestSemaphore
+	// Check location type
+	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames([]int32{int32(id)}, nil)
+	if err != nil {
+		msg := "Could not get location type from ESI!"
+		return Location{}, errors.New(msg)
+	}
+	if response.StatusCode != http.StatusOK {
+		msg := "Invalid HTTP status when querying location type!"
+		return Location{}, errors.New(msg)
+	}
+	if len(locationType) == 0 {
+		msg := "No location type returned by ESI!"
+		return Location{}, errors.New(msg)
+	}
+
+	// Get and return location
+	switch locationType[0].Category {
+	case "station":
+		return fetchStation(id)
+	case "solar_system":
+		return fetchSolarSystem(id)
+	case "constellation":
+		return fetchConstellation(id)
+	case "region":
+		return fetchRegion(id)
+	default:
+		msg := fmt.Sprintf("Unhandled category '%s'!", locationType[0].Category)
+		return Location{}, errors.New(msg)
+	}
+}
+
+// Fetch a station from ESI
+func fetchStation(id int64) (Location, error) {
+	// Check if recent version is available in cache
+	cachedStation, needsUpdate, err := fetchLocationFromCache(id)
 	if err != nil {
 		return Location{}, err
 	}
-	if statusCode != 200 {
-		msg := fmt.Sprintf("CREST returned wrong status code %d for location %d", statusCode, id)
-		return Location{}, errors.New(msg)
+
+	// Return cached version
+	if !needsUpdate {
+		return cachedStation.Location, nil
 	}
 
-	var location Location
-	err = location.UnmarshalJSON(body)
+	logrus.WithField("station_id", id).Debug("Loading station from ESI.")
+
+	// Fetch from ESI if not in cache
+	station, _, err := esiClient.ESI.UniverseApi.GetUniverseStationsStationId(int32(id), nil)
 	if err != nil {
-		msg := fmt.Sprintf("CREST returned invalid JSON data for location %d (%s): %s", statusCode, err.Error(), string(body))
-		return Location{}, errors.New(msg)
+		return Location{}, err
+	}
+
+	// Get solar system
+	solarSystem, err := fetchSolarSystem(int64(station.SystemId))
+	if err != nil {
+		return Location{}, err
+	}
+
+	coordinates := Coordinates{
+		X: float64(station.Position.X),
+		Y: float64(station.Position.Y),
+		Z: float64(station.Position.Z),
+	}
+
+	location := Location(solarSystem)
+	location.Station = Station{
+		ID:          int64(station.SystemId),
+		Name:        station.Name,
+		TypeID:      int64(station.TypeId),
+		Public:      true,
+		Coordinates: coordinates,
 	}
 
 	return location, nil
+}
+
+// Fetch a solar system from ESI
+func fetchSolarSystem(id int64) (Location, error) {
+	// Check if recent version is available in cache
+	cachedSolarSystem, needsUpdate, err := fetchLocationFromCache(id)
+	if err != nil {
+		return Location{}, err
+	}
+
+	// Return cached version
+	if !needsUpdate {
+		return cachedSolarSystem.Location, nil
+	}
+
+	logrus.WithField("solar_system_id", id).Debug("Loading solar system from ESI.")
+
+	// Fetch from ESI if not in cache
+	solarSystem, _, err := esiClient.ESI.UniverseApi.GetUniverseSystemsSystemId(int32(id), nil)
+	if err != nil {
+		return Location{}, err
+	}
+
+	// Get constellation
+	constellation, err := fetchConstellation(int64(solarSystem.ConstellationId))
+	if err != nil {
+		return Location{}, err
+	}
+
+	location := Location(constellation)
+	location.SolarSystem = SolarSystem{
+		ID:             int64(solarSystem.SystemId),
+		Name:           solarSystem.Name,
+		SecurityStatus: float64(solarSystem.SecurityStatus),
+	}
+
+	return location, nil
+}
+
+// Fetch a constellation from ESI
+func fetchConstellation(id int64) (Location, error) {
+	// Check if recent version is available in cache
+	cachedConstellation, needsUpdate, err := fetchLocationFromCache(id)
+	if err != nil {
+		return Location{}, err
+	}
+
+	// Return cached version
+	if !needsUpdate {
+		return cachedConstellation.Location, nil
+	}
+
+	logrus.WithField("constellation_id", id).Debug("Loading constellation from ESI.")
+
+	// Fetch from ESI if not in cache
+	constellation, _, err := esiClient.ESI.UniverseApi.GetUniverseConstellationsConstellationId(int32(id), nil)
+	if err != nil {
+		return Location{}, err
+	}
+
+	// Get region
+	region, err := fetchRegion(int64(constellation.RegionId))
+	if err != nil {
+		return Location{}, err
+	}
+
+	location := Location(region)
+	location.Constellation = Constellation{
+		ID:   int64(constellation.ConstellationId),
+		Name: constellation.Name,
+	}
+
+	return location, nil
+}
+
+// Fetch a region from ESI
+func fetchRegion(id int64) (Location, error) {
+	// Check if recent version is available in cache
+	cachedRegion, needsUpdate, err := fetchLocationFromCache(id)
+	if err != nil {
+		return Location{}, err
+	}
+
+	// Return cached version
+	if !needsUpdate {
+		return cachedRegion.Location, nil
+	}
+
+	logrus.WithField("region_id", id).Debug("Loading region from ESI.")
+
+	// Fetch from ESI if not in cache
+	region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(int32(id), nil)
+	if err != nil {
+		return Location{}, err
+	}
+
+	return Location{
+		Region: Region{
+			ID:   int64(region.RegionId),
+			Name: region.Name,
+		},
+	}, nil
 }
 
 // Deduplicate a slice of integers

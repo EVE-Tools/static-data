@@ -16,7 +16,7 @@ RUN printf "http://mirror.leaseweb.com/alpine/v3.4/main\nhttp://mirror.leaseweb.
 # Copy build
 COPY static-data static-data
 
-ENV PORT 80
-EXPOSE 80
+ENV PORT 8000
+EXPOSE 8000
 
 CMD ["/static-data"]
