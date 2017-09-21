@@ -482,7 +482,7 @@ func fetchStation(id int64) (Location, error) {
 
 	location := Location(solarSystem)
 	location.Station = Station{
-		ID:          int64(station.SystemId),
+		ID:          int64(station.StationId),
 		Name:        station.Name,
 		TypeID:      int64(station.TypeId),
 		Public:      true,
