@@ -93,6 +93,11 @@ func Initialize(esiHost string, structureHuntHost string, disableTLS bool, datab
 
 // Keep ticking in own goroutine and spawn worker tasks.
 func scheduleStaticDataUpdate() {
+	// Load on start...
+	go updateStructures()
+	go updateRegions()
+
+	// ...then update every 30 minutes
 	ticker := time.NewTicker(30 * time.Minute)
 	defer ticker.Stop()
 	for {
