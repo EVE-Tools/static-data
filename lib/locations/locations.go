@@ -15,7 +15,6 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"github.com/valyala/fasthttp"
 )
 
 // GetLocationsEndpoint returns location info for a given list.
@@ -55,13 +54,16 @@ func GetLocationsEndpoint(context *gin.Context) {
 }
 
 var db *bolt.DB
-var esiClient goesi.APIClient
-var genericClient fasthttp.Client
+var esiClient *goesi.APIClient
+var genericClient *http.Client
 var structureHuntURL string
 
 // Initialize initializes infrastructure for locations
-func Initialize(esiHost string, structureHuntHost string, disableTLS bool, database *bolt.DB) {
+func Initialize(esi *goesi.APIClient, gen *http.Client, url string, database *bolt.DB) {
 	db = database
+	esiClient = esi
+	genericClient = gen
+	structureHuntURL = url
 
 	// Initialize buckets
 	err := db.Update(func(tx *bolt.Tx) error {
@@ -70,21 +72,6 @@ func Initialize(esiHost string, structureHuntHost string, disableTLS bool, datab
 	})
 	if err != nil {
 		panic(err)
-	}
-
-	// Initialize clients
-	userAgent := "Element43/static-data (element-43.com)"
-
-	genericClient.Name = userAgent
-
-	esiClient = *goesi.NewAPIClient(nil, userAgent)
-
-	if disableTLS {
-		esiClient.ChangeBasePath(fmt.Sprintf("http://%s:443", esiHost))
-		structureHuntURL = fmt.Sprintf("http://%s:443/api/structure/all", structureHuntHost)
-	} else {
-		esiClient.ChangeBasePath(fmt.Sprintf("https://%s", esiHost))
-		structureHuntURL = fmt.Sprintf("https://%s/api/structure/all", structureHuntHost)
 	}
 
 	// Initialize static data
@@ -109,13 +96,11 @@ func scheduleStaticDataUpdate() {
 
 // Update all structures in cache
 func updateStructures() {
-	var body []byte
-
 	logrus.Debug("Downloading structures...")
 
 	// Fetch with no timeout
 	requestStart := time.Now()
-	statusCode, body, err := genericClient.Get(body, structureHuntURL)
+	response, err := genericClient.Get(structureHuntURL)
 	requestTime := time.Since(requestStart)
 	logrus.WithFields(logrus.Fields{
 		"time": requestTime,
@@ -124,13 +109,23 @@ func updateStructures() {
 		logrus.WithError(err).Warn("Could not fetch 3rd party structure API")
 		return
 	}
-	if statusCode != 200 {
-		logrus.Warnf("Server returned invalid status: %d", statusCode)
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		logrus.Warnf("Server returned invalid status: %d", response.StatusCode)
 		return
 	}
 
 	var allStructures AllStructures
-	err = allStructures.UnmarshalJSON(body)
+
+	responseJSON, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		logrus.WithError(err).Warn("Could not read response of structure hunt")
+		return
+	}
+
+	err = allStructures.UnmarshalJSON(responseJSON)
 	if err != nil {
 		logrus.WithError(err).Warn("JSON returned from 3rd party structure API is invalid")
 		return
@@ -424,7 +419,7 @@ func fetchLocationFromESI(id int64) (Location, error) {
 	// Check location type
 	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames([]int32{int32(id)}, nil)
 	if err != nil {
-		msg := "Could not get location type from ESI!"
+		msg := fmt.Sprintf("Could not get location type of ID %d from ESI!", id)
 		return Location{}, errors.New(msg)
 	}
 	if response.StatusCode != http.StatusOK {

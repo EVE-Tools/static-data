@@ -1,9 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"runtime"
 	"time"
 
+	"github.com/antihax/goesi"
+
+	"github.com/EVE-Tools/element43/go/lib/transport"
 	"github.com/EVE-Tools/static-data/lib/locations"
 
 	"github.com/boltdb/bolt"
@@ -47,6 +52,36 @@ func loadConfig() Config {
 	return config
 }
 
+// getClients generates API clients and base URLs
+func getClients(config Config) (*goesi.APIClient, *http.Client, string) {
+	const userAgent string = "Element43/static-data (element-43.com)"
+	const timeout time.Duration = time.Duration(time.Second * 10)
+	var structureHuntURL string
+
+	// Initialize clients
+	genericClient := &http.Client{
+		Timeout:   time.Minute,
+		Transport: transport.NewTransport(userAgent),
+	}
+
+	httpClientESI := &http.Client{
+		Timeout:   timeout,
+		Transport: transport.NewESITransport(userAgent, timeout),
+	}
+
+	esiClient := goesi.NewAPIClient(httpClientESI, userAgent)
+
+	if config.DisableTLS {
+		esiClient.ChangeBasePath(fmt.Sprintf("http://%s:443", config.ESIHost))
+		structureHuntURL = fmt.Sprintf("http://%s:443/api/structure/all", config.StructureHuntHost)
+	} else {
+		esiClient.ChangeBasePath(fmt.Sprintf("https://%s", config.ESIHost))
+		structureHuntURL = fmt.Sprintf("https://%s/api/structure/all", config.StructureHuntHost)
+	}
+
+	return esiClient, genericClient, structureHuntURL
+}
+
 // Init DB and start endpoint.
 func startEndpoint(config Config) {
 	db, err := bolt.Open(config.DBPath, 0600, &bolt.Options{Timeout: 1 * time.Second})
@@ -54,9 +89,11 @@ func startEndpoint(config Config) {
 		panic(err)
 	}
 
-	locations.Initialize(config.ESIHost,
-		config.StructureHuntHost,
-		config.DisableTLS,
+	esiClient, genericClient, url := getClients(config)
+
+	locations.Initialize(esiClient,
+		genericClient,
+		url,
 		db)
 
 	gin.SetMode(gin.ReleaseMode)
