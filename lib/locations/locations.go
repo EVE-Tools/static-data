@@ -121,7 +121,7 @@ func updateStructures() {
 		"time": requestTime,
 	}).Info("Loaded structures.")
 	if err != nil {
-		logrus.Warnf("Could not fetch 3rd party structure API: %s", err.Error())
+		logrus.WithError(err).Warn("Could not fetch 3rd party structure API")
 		return
 	}
 	if statusCode != 200 {
@@ -132,7 +132,7 @@ func updateStructures() {
 	var allStructures AllStructures
 	err = allStructures.UnmarshalJSON(body)
 	if err != nil {
-		logrus.Warnf("JSON returned from 3rd party structure API is invalid: %s", err.Error())
+		logrus.WithError(err).Warn("JSON returned from 3rd party structure API is invalid")
 		return
 	}
 
@@ -148,7 +148,7 @@ func updateStructures() {
 
 	_, err = getLocations(systemIDs)
 	if err != nil {
-		logrus.Warnf("Failed to update structure cache: %s", err.Error())
+		logrus.WithError(err).Warnf("Failed to update structure cache")
 		return
 	}
 
@@ -191,7 +191,7 @@ func updateRegions() {
 
 		err = putIntoCache(cachedLocation)
 		if err != nil {
-			logrus.Warnf("Failed to store region: %s", err.Error())
+			logrus.WithError(err).Warn("Failed to store region")
 			return
 		}
 	}
@@ -200,13 +200,13 @@ func updateRegions() {
 func storeStructure(key string, structure Structure, expireAt int64) {
 	id, err := strconv.ParseInt(key, 10, 64)
 	if err != nil {
-		logrus.Warnf("Failed to parse structure ID: %s", err.Error())
+		logrus.WithError(err).Warnf("Failed to parse structure ID")
 		return
 	}
 
 	system, err := getLocation(structure.SystemID)
 	if err != nil {
-		logrus.Warnf("Failed to fetch system: %s", err.Error())
+		logrus.WithError(err).Warnf("Failed to fetch system")
 		return
 	}
 
@@ -232,7 +232,7 @@ func storeStructure(key string, structure Structure, expireAt int64) {
 
 	err = putIntoCache(cachedLocation)
 	if err != nil {
-		logrus.Warnf("Failed to store structure: %s", err.Error())
+		logrus.WithError(err).Warnf("Failed to store structure")
 		return
 	}
 }
