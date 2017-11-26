@@ -159,14 +159,14 @@ func updateRegions() {
 	logrus.Debug("Downloading regions...")
 
 	// Fetch IDs from ESI
-	regionIDs, _, err := esiClient.ESI.UniverseApi.GetUniverseRegions(nil)
+	regionIDs, _, err := esiClient.ESI.UniverseApi.GetUniverseRegions(nil, nil)
 	if err != nil {
 		logrus.WithError(err).Error("Could not get regions.")
 		return
 	}
 
 	for _, id := range regionIDs {
-		region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(id, nil)
+		region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(nil, id, nil)
 		if err != nil {
 			logrus.WithError(err).Error("Could not get region info.")
 			return
@@ -417,7 +417,7 @@ func fetchLocationFromESI(id int64) (Location, error) {
 	logrus.Debugf("Getting location %d from ESI", id)
 
 	// Check location type
-	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames([]int32{int32(id)}, nil)
+	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames(nil, []int32{int32(id)}, nil)
 	if err != nil {
 		msg := fmt.Sprintf("Could not get location type of ID %d from ESI!", id)
 		return Location{}, errors.New(msg)
@@ -463,7 +463,7 @@ func fetchStation(id int64) (Location, error) {
 	logrus.WithField("station_id", id).Debug("Loading station from ESI.")
 
 	// Fetch from ESI if not in cache
-	station, _, err := esiClient.ESI.UniverseApi.GetUniverseStationsStationId(int32(id), nil)
+	station, _, err := esiClient.ESI.UniverseApi.GetUniverseStationsStationId(nil, int32(id), nil)
 	if err != nil {
 		return Location{}, err
 	}
@@ -508,7 +508,7 @@ func fetchSolarSystem(id int64) (Location, error) {
 	logrus.WithField("solar_system_id", id).Debug("Loading solar system from ESI.")
 
 	// Fetch from ESI if not in cache
-	solarSystem, _, err := esiClient.ESI.UniverseApi.GetUniverseSystemsSystemId(int32(id), nil)
+	solarSystem, _, err := esiClient.ESI.UniverseApi.GetUniverseSystemsSystemId(nil, int32(id), nil)
 	if err != nil {
 		return Location{}, err
 	}
@@ -545,7 +545,7 @@ func fetchConstellation(id int64) (Location, error) {
 	logrus.WithField("constellation_id", id).Debug("Loading constellation from ESI.")
 
 	// Fetch from ESI if not in cache
-	constellation, _, err := esiClient.ESI.UniverseApi.GetUniverseConstellationsConstellationId(int32(id), nil)
+	constellation, _, err := esiClient.ESI.UniverseApi.GetUniverseConstellationsConstellationId(nil, int32(id), nil)
 	if err != nil {
 		return Location{}, err
 	}
@@ -581,7 +581,7 @@ func fetchRegion(id int64) (Location, error) {
 	logrus.WithField("region_id", id).Debug("Loading region from ESI.")
 
 	// Fetch from ESI if not in cache
-	region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(int32(id), nil)
+	region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(nil, int32(id), nil)
 	if err != nil {
 		return Location{}, err
 	}
