@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"errors"
-
 	"fmt"
 
 	"io/ioutil"
@@ -14,6 +12,7 @@ import (
 	"github.com/antihax/goesi"
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -419,8 +418,8 @@ func fetchLocationFromESI(id int64) (Location, error) {
 	// Check location type
 	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames(nil, []int32{int32(id)}, nil)
 	if err != nil {
-		msg := fmt.Sprintf("Could not get location type of ID %d from ESI!", id)
-		return Location{}, errors.New(msg)
+		msg := fmt.Sprintf("could not get location type of ID %d from ESI", id)
+		return Location{}, errors.Wrap(err, msg)
 	}
 	if response.StatusCode != http.StatusOK {
 		msg := "Invalid HTTP status when querying location type!"
