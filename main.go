@@ -55,7 +55,7 @@ func loadConfig() Config {
 // getClients generates API clients and base URLs
 func getClients(config Config) (*goesi.APIClient, *http.Client, string) {
 	const userAgent string = "Element43/static-data (element-43.com)"
-	const timeout time.Duration = time.Duration(time.Second * 10)
+	const timeout time.Duration = time.Duration(time.Second * 30)
 	var structureHuntURL string
 
 	// Initialize clients
