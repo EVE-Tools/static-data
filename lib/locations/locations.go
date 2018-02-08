@@ -1,55 +1,32 @@
 package locations
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/golang/protobuf/ptypes"
 
 	"fmt"
 
 	"io/ioutil"
 
+	pb "github.com/EVE-Tools/static-data/lib/staticData"
 	"github.com/antihax/goesi"
 	"github.com/boltdb/bolt"
-	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-// GetLocationsEndpoint returns location info for a given list.
-func GetLocationsEndpoint(context *gin.Context) {
-	// Get request body
-	body, err := ioutil.ReadAll(context.Request.Body)
-	if err != nil {
-		context.AbortWithError(500, err)
-		return
-	}
+// Server is a gRPC server serving location requests
+type Server struct{}
 
-	// Parse IDs from body
-	var ids RequestLocationsBody
-	err = ids.UnmarshalJSON(body)
-	if err != nil {
-		context.AbortWithError(500, err)
-		return
-	}
+// GetLocations returns location info for a given list.
+func (server *Server) GetLocations(context context.Context, request *pb.GetLocationsRequest) (*pb.GetLocationsResponse, error) {
+	locations, _ := getLocations(request.GetLocationIds())
 
-	// Try to get from cache, even if none returned, return code 207
-	locations, cacheErr := getLocations(ids.Locations)
-
-	//  Serialize data from cache
-	responseJSON, err := locations.MarshalJSON()
-	if err != nil {
-		context.AbortWithError(500, err)
-		return
-	}
-
-	// If there was an error while fetching data, return successful subset with 207, on succcess 200
-	responseCode := 200
-	if cacheErr != nil {
-		responseCode = 207
-	}
-
-	context.Data(responseCode, "application/json; charset=utf-8", responseJSON)
+	return &pb.GetLocationsResponse{Locations: locations}, nil
 }
 
 var db *bolt.DB
@@ -175,9 +152,9 @@ func updateRegions() {
 		cachedLocation := CachedLocation{
 			ID:        int64(region.RegionId),
 			ExpiresAt: time.Now().Unix() + 86400,
-			Location: Location{
-				Region: Region{
-					ID:   int64(region.RegionId),
+			Location: pb.Location{
+				Region: &pb.Region{
+					Id:   int64(region.RegionId),
 					Name: region.Name,
 				},
 			},
@@ -204,22 +181,34 @@ func storeStructure(key string, structure Structure, expireAt int64) {
 		return
 	}
 
+	lastSeenProto, err := ptypes.TimestampProto(structure.LastSeen)
+	if err != nil {
+		logrus.WithError(err).Warnf("Could not convert structure's last seen timestamp")
+		return
+	}
+
+	firstSeenProto, err := ptypes.TimestampProto(structure.FirstSeen)
+	if err != nil {
+		logrus.WithError(err).Warnf("Could not convert structure's first seen timestamp")
+		return
+	}
+
 	cachedLocation := CachedLocation{
 		ID:        id,
 		ExpiresAt: expireAt,
-		Location: Location{
+		Location: pb.Location{
 			Region:        system.Region,
 			Constellation: system.Constellation,
 			SolarSystem:   system.SolarSystem,
-			Station: Station{
-				ID:          id,
+			Station: &pb.Station{
+				Id:          id,
 				Name:        structure.Name,
-				TypeID:      structure.TypeID,
+				TypeId:      structure.TypeID,
 				TypeName:    structure.TypeName,
-				LastSeen:    structure.LastSeen,
+				LastSeen:    lastSeenProto,
 				Public:      structure.Public,
-				FirstSeen:   structure.FirstSeen,
-				Coordinates: structure.Coordinates,
+				FirstSeen:   firstSeenProto,
+				Coordinates: &structure.Coordinates,
 			},
 		},
 	}
@@ -232,22 +221,22 @@ func storeStructure(key string, structure Structure, expireAt int64) {
 }
 
 // Get a single location.
-func getLocation(id int64) (Location, error) {
+func getLocation(id int64) (pb.Location, error) {
 	cachedLocation, err := getCachedLocation(id)
 
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	return cachedLocation.Location, nil
 }
 
 // Get multiple locations by ID in parallel and return them as map indexed by ID, on error return partial result.
-func getLocations(ids []int64) (Response, error) {
+func getLocations(ids []int64) (map[int64]*pb.Location, error) {
 	// Deduplicate IDs
 	ids = deduplicateIDs(ids)
 
-	response := make(Response)
+	response := make(map[int64]*pb.Location)
 	success := make(chan CachedLocation)
 	failure := make(chan error)
 	outstandingRequests := len(ids)
@@ -260,7 +249,7 @@ func getLocations(ids []int64) (Response, error) {
 	for outstandingRequests > 0 {
 		select {
 		case location := <-success:
-			response[strconv.FormatInt(location.ID, 10)] = location.Location
+			response[location.ID] = &location.Location
 		case err := <-failure:
 			logrus.Warn(err.Error())
 			failed = true
@@ -412,22 +401,22 @@ func putIntoCache(cachedLocation CachedLocation) error {
 }
 
 // Fetches a location from ESI.
-func fetchLocationFromESI(id int64) (Location, error) {
+func fetchLocationFromESI(id int64) (pb.Location, error) {
 	logrus.Debugf("Getting location %d from ESI", id)
 
 	// Check location type
 	locationType, response, err := esiClient.ESI.UniverseApi.PostUniverseNames(nil, []int32{int32(id)}, nil)
 	if err != nil {
 		msg := fmt.Sprintf("could not get location type of ID %d from ESI", id)
-		return Location{}, errors.Wrap(err, msg)
+		return pb.Location{}, errors.Wrap(err, msg)
 	}
 	if response.StatusCode != http.StatusOK {
 		msg := "Invalid HTTP status when querying location type!"
-		return Location{}, errors.New(msg)
+		return pb.Location{}, errors.New(msg)
 	}
 	if len(locationType) == 0 {
 		msg := "No location type returned by ESI!"
-		return Location{}, errors.New(msg)
+		return pb.Location{}, errors.New(msg)
 	}
 
 	// Get and return location
@@ -442,16 +431,16 @@ func fetchLocationFromESI(id int64) (Location, error) {
 		return fetchRegion(id)
 	default:
 		msg := fmt.Sprintf("Unhandled category '%s'!", locationType[0].Category)
-		return Location{}, errors.New(msg)
+		return pb.Location{}, errors.New(msg)
 	}
 }
 
 // Fetch a station from ESI
-func fetchStation(id int64) (Location, error) {
+func fetchStation(id int64) (pb.Location, error) {
 	// Check if recent version is available in cache
 	cachedStation, needsUpdate, err := fetchLocationFromCache(id)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Return cached version
@@ -464,39 +453,39 @@ func fetchStation(id int64) (Location, error) {
 	// Fetch from ESI if not in cache
 	station, _, err := esiClient.ESI.UniverseApi.GetUniverseStationsStationId(nil, int32(id), nil)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Get solar system
 	solarSystem, err := fetchSolarSystem(int64(station.SystemId))
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
-	coordinates := Coordinates{
+	coordinates := pb.Coordinates{
 		X: float64(station.Position.X),
 		Y: float64(station.Position.Y),
 		Z: float64(station.Position.Z),
 	}
 
-	location := Location(solarSystem)
-	location.Station = Station{
-		ID:          int64(station.StationId),
+	location := pb.Location(solarSystem)
+	location.Station = &pb.Station{
+		Id:          int64(station.StationId),
 		Name:        station.Name,
-		TypeID:      int64(station.TypeId),
+		TypeId:      int64(station.TypeId),
 		Public:      true,
-		Coordinates: coordinates,
+		Coordinates: &coordinates,
 	}
 
 	return location, nil
 }
 
 // Fetch a solar system from ESI
-func fetchSolarSystem(id int64) (Location, error) {
+func fetchSolarSystem(id int64) (pb.Location, error) {
 	// Check if recent version is available in cache
 	cachedSolarSystem, needsUpdate, err := fetchLocationFromCache(id)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Return cached version
@@ -509,18 +498,18 @@ func fetchSolarSystem(id int64) (Location, error) {
 	// Fetch from ESI if not in cache
 	solarSystem, _, err := esiClient.ESI.UniverseApi.GetUniverseSystemsSystemId(nil, int32(id), nil)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Get constellation
 	constellation, err := fetchConstellation(int64(solarSystem.ConstellationId))
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
-	location := Location(constellation)
-	location.SolarSystem = SolarSystem{
-		ID:             int64(solarSystem.SystemId),
+	location := pb.Location(constellation)
+	location.SolarSystem = &pb.SolarSystem{
+		Id:             int64(solarSystem.SystemId),
 		Name:           solarSystem.Name,
 		SecurityStatus: float64(solarSystem.SecurityStatus),
 	}
@@ -529,11 +518,11 @@ func fetchSolarSystem(id int64) (Location, error) {
 }
 
 // Fetch a constellation from ESI
-func fetchConstellation(id int64) (Location, error) {
+func fetchConstellation(id int64) (pb.Location, error) {
 	// Check if recent version is available in cache
 	cachedConstellation, needsUpdate, err := fetchLocationFromCache(id)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Return cached version
@@ -546,18 +535,18 @@ func fetchConstellation(id int64) (Location, error) {
 	// Fetch from ESI if not in cache
 	constellation, _, err := esiClient.ESI.UniverseApi.GetUniverseConstellationsConstellationId(nil, int32(id), nil)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Get region
 	region, err := fetchRegion(int64(constellation.RegionId))
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
-	location := Location(region)
-	location.Constellation = Constellation{
-		ID:   int64(constellation.ConstellationId),
+	location := pb.Location(region)
+	location.Constellation = &pb.Constellation{
+		Id:   int64(constellation.ConstellationId),
 		Name: constellation.Name,
 	}
 
@@ -565,11 +554,11 @@ func fetchConstellation(id int64) (Location, error) {
 }
 
 // Fetch a region from ESI
-func fetchRegion(id int64) (Location, error) {
+func fetchRegion(id int64) (pb.Location, error) {
 	// Check if recent version is available in cache
 	cachedRegion, needsUpdate, err := fetchLocationFromCache(id)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
 	// Return cached version
@@ -582,12 +571,12 @@ func fetchRegion(id int64) (Location, error) {
 	// Fetch from ESI if not in cache
 	region, _, err := esiClient.ESI.UniverseApi.GetUniverseRegionsRegionId(nil, int32(id), nil)
 	if err != nil {
-		return Location{}, err
+		return pb.Location{}, err
 	}
 
-	return Location{
-		Region: Region{
-			ID:   int64(region.RegionId),
+	return pb.Location{
+		Region: &pb.Region{
+			Id:   int64(region.RegionId),
 			Name: region.Name,
 		},
 	}, nil

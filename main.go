@@ -2,19 +2,23 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"runtime"
 	"time"
 
 	"github.com/antihax/goesi"
+	"google.golang.org/grpc"
 
 	"github.com/EVE-Tools/element43/go/lib/transport"
 	"github.com/EVE-Tools/static-data/lib/locations"
+	pb "github.com/EVE-Tools/static-data/lib/staticData"
 
 	"github.com/boltdb/bolt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/contrib/ginrus"
-	"github.com/gin-gonic/gin"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +27,7 @@ import (
 type Config struct {
 	DBPath            string `default:"static-data.db" envconfig:"db_path"`
 	LogLevel          string `default:"info" envconfig:"log_level"`
-	Port              string `default:"8000" envconfig:"port"`
+	Port              string `default:"43000" envconfig:"port"`
 	ESIHost           string `default:"esi.tech.ccp.is" envconfig:"esi_host"`
 	StructureHuntHost string `default:"stop.hammerti.me.uk" envconfig:"structure_hunt_host"`
 	DisableTLS        bool   `default:"false" envconfig:"disable_tls"`
@@ -82,7 +86,7 @@ func getClients(config Config) (*goesi.APIClient, *http.Client, string) {
 	return esiClient, genericClient, structureHuntURL
 }
 
-// Init DB and start endpoint.
+// Init DB and start gRPC endpoint.
 func startEndpoint(config Config) {
 	db, err := bolt.Open(config.DBPath, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
@@ -96,13 +100,19 @@ func startEndpoint(config Config) {
 		url,
 		db)
 
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.New()
-	router.Use(cors.Default())
-	router.Use(ginrus.Ginrus(logrus.StandardLogger(), time.RFC3339, true))
+	var opts []grpc.ServerOption
+	var logOpts []grpc_logrus.Option
+	opts = append(opts, grpc_middleware.WithUnaryServerChain(
+		grpc_ctxtags.UnaryServerInterceptor(),
+		grpc_logrus.UnaryServerInterceptor(logrus.NewEntry(logrus.New()), logOpts...)))
 
-	v1 := router.Group("/api/static-data/v1")
-	v1.POST("/location/", locations.GetLocationsEndpoint)
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", config.Port))
 
-	router.Run(":" + config.Port)
+	if err != nil {
+		log.Fatalf("could not listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer(opts...)
+	pb.RegisterStaticDataServer(grpcServer, &locations.Server{})
+	grpcServer.Serve(listener)
 }

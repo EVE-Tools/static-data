@@ -4,6 +4,8 @@ package locations
 
 import (
 	json "encoding/json"
+	staticData "github.com/EVE-Tools/static-data/lib/staticData"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -43,19 +45,23 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations(in *jlexer.Le
 		case "regionId":
 			out.RegionID = int64(in.Int64())
 		case "location":
-			(out.Coordinates).UnmarshalEasyJSON(in)
+			easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData(in, &out.Coordinates)
 		case "typeName":
 			out.TypeName = string(in.String())
 		case "systemId":
 			out.SystemID = int64(in.Int64())
 		case "lastSeen":
-			out.LastSeen = string(in.String())
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.LastSeen).UnmarshalJSON(data))
+			}
 		case "systemName":
 			out.SystemName = string(in.String())
 		case "public":
 			out.Public = bool(in.Bool())
 		case "firstSeen":
-			out.FirstSeen = string(in.String())
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.FirstSeen).UnmarshalJSON(data))
+			}
 		case "regionName":
 			out.RegionName = string(in.String())
 		default:
@@ -72,72 +78,116 @@ func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations(out *jwriter.
 	out.RawByte('{')
 	first := true
 	_ = first
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"typeId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.TypeID))
 	}
-	first = false
-	out.RawString("\"typeId\":")
-	out.Int64(int64(in.TypeID))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
 	}
-	first = false
-	out.RawString("\"name\":")
-	out.String(string(in.Name))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"regionId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.RegionID))
 	}
-	first = false
-	out.RawString("\"regionId\":")
-	out.Int64(int64(in.RegionID))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"location\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData(out, in.Coordinates)
 	}
-	first = false
-	out.RawString("\"location\":")
-	(in.Coordinates).MarshalEasyJSON(out)
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"typeName\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.TypeName))
 	}
-	first = false
-	out.RawString("\"typeName\":")
-	out.String(string(in.TypeName))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"systemId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.SystemID))
 	}
-	first = false
-	out.RawString("\"systemId\":")
-	out.Int64(int64(in.SystemID))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"lastSeen\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.LastSeen).MarshalJSON())
 	}
-	first = false
-	out.RawString("\"lastSeen\":")
-	out.String(string(in.LastSeen))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"systemName\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.SystemName))
 	}
-	first = false
-	out.RawString("\"systemName\":")
-	out.String(string(in.SystemName))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"public\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Public))
 	}
-	first = false
-	out.RawString("\"public\":")
-	out.Bool(bool(in.Public))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"firstSeen\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Raw((in.FirstSeen).MarshalJSON())
 	}
-	first = false
-	out.RawString("\"firstSeen\":")
-	out.String(string(in.FirstSeen))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"regionName\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.RegionName))
 	}
-	first = false
-	out.RawString("\"regionName\":")
-	out.String(string(in.RegionName))
 	out.RawByte('}')
 }
 
@@ -164,565 +214,7 @@ func (v *Structure) UnmarshalJSON(data []byte) error {
 func (v *Structure) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations(l, v)
 }
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(in *jlexer.Lexer, out *Station) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "id":
-			out.ID = int64(in.Int64())
-		case "name":
-			out.Name = string(in.String())
-		case "typeId":
-			out.TypeID = int64(in.Int64())
-		case "typeName":
-			out.TypeName = string(in.String())
-		case "lastSeen":
-			out.LastSeen = string(in.String())
-		case "public":
-			out.Public = bool(in.Bool())
-		case "firstSeen":
-			out.FirstSeen = string(in.String())
-		case "position":
-			(out.Coordinates).UnmarshalEasyJSON(in)
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(out *jwriter.Writer, in Station) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"id\":")
-	out.Int64(int64(in.ID))
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"name\":")
-	out.String(string(in.Name))
-	if in.TypeID != 0 {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"typeId\":")
-		out.Int64(int64(in.TypeID))
-	}
-	if in.TypeName != "" {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"typeName\":")
-		out.String(string(in.TypeName))
-	}
-	if in.LastSeen != "" {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"lastSeen\":")
-		out.String(string(in.LastSeen))
-	}
-	if in.Public {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"public\":")
-		out.Bool(bool(in.Public))
-	}
-	if in.FirstSeen != "" {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"firstSeen\":")
-		out.String(string(in.FirstSeen))
-	}
-	if true {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"position\":")
-		(in.Coordinates).MarshalEasyJSON(out)
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Station) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Station) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Station) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Station) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(in *jlexer.Lexer, out *SolarSystem) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "id":
-			out.ID = int64(in.Int64())
-		case "securityStatus":
-			out.SecurityStatus = float64(in.Float64())
-		case "name":
-			out.Name = string(in.String())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(out *jwriter.Writer, in SolarSystem) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"id\":")
-	out.Int64(int64(in.ID))
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"securityStatus\":")
-	out.Float64(float64(in.SecurityStatus))
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"name\":")
-	out.String(string(in.Name))
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v SolarSystem) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v SolarSystem) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *SolarSystem) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *SolarSystem) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations3(in *jlexer.Lexer, out *Response) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		in.Skip()
-	} else {
-		in.Delim('{')
-		if !in.IsDelim('}') {
-			*out = make(Response)
-		} else {
-			*out = nil
-		}
-		for !in.IsDelim('}') {
-			key := string(in.String())
-			in.WantColon()
-			var v1 Location
-			(v1).UnmarshalEasyJSON(in)
-			(*out)[key] = v1
-			in.WantComma()
-		}
-		in.Delim('}')
-	}
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations3(out *jwriter.Writer, in Response) {
-	if in == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
-		out.RawString(`null`)
-	} else {
-		out.RawByte('{')
-		v2First := true
-		for v2Name, v2Value := range in {
-			if !v2First {
-				out.RawByte(',')
-			}
-			v2First = false
-			out.String(string(v2Name))
-			out.RawByte(':')
-			(v2Value).MarshalEasyJSON(out)
-		}
-		out.RawByte('}')
-	}
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Response) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations3(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Response) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations3(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Response) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations3(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Response) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations3(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations4(in *jlexer.Lexer, out *RequestLocationsBody) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "locationIDs":
-			if in.IsNull() {
-				in.Skip()
-				out.Locations = nil
-			} else {
-				in.Delim('[')
-				if out.Locations == nil {
-					if !in.IsDelim(']') {
-						out.Locations = make([]int64, 0, 8)
-					} else {
-						out.Locations = []int64{}
-					}
-				} else {
-					out.Locations = (out.Locations)[:0]
-				}
-				for !in.IsDelim(']') {
-					var v3 int64
-					v3 = int64(in.Int64())
-					out.Locations = append(out.Locations, v3)
-					in.WantComma()
-				}
-				in.Delim(']')
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations4(out *jwriter.Writer, in RequestLocationsBody) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"locationIDs\":")
-	if in.Locations == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-		out.RawString("null")
-	} else {
-		out.RawByte('[')
-		for v4, v5 := range in.Locations {
-			if v4 > 0 {
-				out.RawByte(',')
-			}
-			out.Int64(int64(v5))
-		}
-		out.RawByte(']')
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v RequestLocationsBody) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations4(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v RequestLocationsBody) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations4(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *RequestLocationsBody) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations4(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *RequestLocationsBody) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations4(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations5(in *jlexer.Lexer, out *Region) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "id":
-			out.ID = int64(in.Int64())
-		case "name":
-			out.Name = string(in.String())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations5(out *jwriter.Writer, in Region) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"id\":")
-	out.Int64(int64(in.ID))
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"name\":")
-	out.String(string(in.Name))
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Region) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations5(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Region) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations5(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Region) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations5(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Region) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations5(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations6(in *jlexer.Lexer, out *Location) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "station":
-			(out.Station).UnmarshalEasyJSON(in)
-		case "region":
-			(out.Region).UnmarshalEasyJSON(in)
-		case "solarSystem":
-			(out.SolarSystem).UnmarshalEasyJSON(in)
-		case "constellation":
-			(out.Constellation).UnmarshalEasyJSON(in)
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations6(out *jwriter.Writer, in Location) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if true {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"station\":")
-		(in.Station).MarshalEasyJSON(out)
-	}
-	if true {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"region\":")
-		(in.Region).MarshalEasyJSON(out)
-	}
-	if true {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"solarSystem\":")
-		(in.SolarSystem).MarshalEasyJSON(out)
-	}
-	if true {
-		if !first {
-			out.RawByte(',')
-		}
-		first = false
-		out.RawString("\"constellation\":")
-		(in.Constellation).MarshalEasyJSON(out)
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Location) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations6(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Location) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations6(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Location) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations6(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Location) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations6(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations7(in *jlexer.Lexer, out *Coordinates) {
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData(in *jlexer.Lexer, out *staticData.Coordinates) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -757,130 +249,43 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations7(in *jlexer.L
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations7(out *jwriter.Writer, in Coordinates) {
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData(out *jwriter.Writer, in staticData.Coordinates) {
 	out.RawByte('{')
 	first := true
 	_ = first
-	if !first {
-		out.RawByte(',')
+	if in.X != 0 {
+		const prefix string = ",\"x\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.X))
 	}
-	first = false
-	out.RawString("\"x\":")
-	out.Float64(float64(in.X))
-	if !first {
-		out.RawByte(',')
+	if in.Y != 0 {
+		const prefix string = ",\"y\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.Y))
 	}
-	first = false
-	out.RawString("\"y\":")
-	out.Float64(float64(in.Y))
-	if !first {
-		out.RawByte(',')
+	if in.Z != 0 {
+		const prefix string = ",\"z\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.Z))
 	}
-	first = false
-	out.RawString("\"z\":")
-	out.Float64(float64(in.Z))
 	out.RawByte('}')
 }
-
-// MarshalJSON supports json.Marshaler interface
-func (v Coordinates) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations7(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Coordinates) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations7(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Coordinates) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations7(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Coordinates) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations7(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations8(in *jlexer.Lexer, out *Constellation) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "id":
-			out.ID = int64(in.Int64())
-		case "name":
-			out.Name = string(in.String())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations8(out *jwriter.Writer, in Constellation) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"id\":")
-	out.Int64(int64(in.ID))
-	if !first {
-		out.RawByte(',')
-	}
-	first = false
-	out.RawString("\"name\":")
-	out.String(string(in.Name))
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Constellation) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations8(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Constellation) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations8(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Constellation) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations8(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Constellation) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations8(l, v)
-}
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations9(in *jlexer.Lexer, out *CachedLocation) {
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(in *jlexer.Lexer, out *CachedLocation) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -904,7 +309,7 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations9(in *jlexer.L
 		case "expiresAt":
 			out.ExpiresAt = int64(in.Int64())
 		case "location":
-			(out.Location).UnmarshalEasyJSON(in)
+			easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData1(in, &out.Location)
 		default:
 			in.SkipRecursive()
 		}
@@ -915,55 +320,585 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations9(in *jlexer.L
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations9(out *jwriter.Writer, in CachedLocation) {
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(out *jwriter.Writer, in CachedLocation) {
 	out.RawByte('{')
 	first := true
 	_ = first
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.ID))
 	}
-	first = false
-	out.RawString("\"id\":")
-	out.Int64(int64(in.ID))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"expiresAt\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.ExpiresAt))
 	}
-	first = false
-	out.RawString("\"expiresAt\":")
-	out.Int64(int64(in.ExpiresAt))
-	if !first {
-		out.RawByte(',')
+	{
+		const prefix string = ",\"location\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData1(out, in.Location)
 	}
-	first = false
-	out.RawString("\"location\":")
-	(in.Location).MarshalEasyJSON(out)
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
 func (v CachedLocation) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations9(&w, v)
+	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CachedLocation) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations9(w, v)
+	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CachedLocation) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations9(&r, v)
+	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CachedLocation) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations9(l, v)
+	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations1(l, v)
 }
-func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations10(in *jlexer.Lexer, out *AllStructures) {
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData1(in *jlexer.Lexer, out *staticData.Location) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "region":
+			if in.IsNull() {
+				in.Skip()
+				out.Region = nil
+			} else {
+				if out.Region == nil {
+					out.Region = new(staticData.Region)
+				}
+				easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData2(in, &*out.Region)
+			}
+		case "constellation":
+			if in.IsNull() {
+				in.Skip()
+				out.Constellation = nil
+			} else {
+				if out.Constellation == nil {
+					out.Constellation = new(staticData.Constellation)
+				}
+				easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData3(in, &*out.Constellation)
+			}
+		case "solar_system":
+			if in.IsNull() {
+				in.Skip()
+				out.SolarSystem = nil
+			} else {
+				if out.SolarSystem == nil {
+					out.SolarSystem = new(staticData.SolarSystem)
+				}
+				easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData4(in, &*out.SolarSystem)
+			}
+		case "station":
+			if in.IsNull() {
+				in.Skip()
+				out.Station = nil
+			} else {
+				if out.Station == nil {
+					out.Station = new(staticData.Station)
+				}
+				easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData5(in, &*out.Station)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData1(out *jwriter.Writer, in staticData.Location) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Region != nil {
+		const prefix string = ",\"region\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData2(out, *in.Region)
+	}
+	if in.Constellation != nil {
+		const prefix string = ",\"constellation\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData3(out, *in.Constellation)
+	}
+	if in.SolarSystem != nil {
+		const prefix string = ",\"solar_system\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData4(out, *in.SolarSystem)
+	}
+	if in.Station != nil {
+		const prefix string = ",\"station\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData5(out, *in.Station)
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData5(in *jlexer.Lexer, out *staticData.Station) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "id":
+			out.Id = int64(in.Int64())
+		case "name":
+			out.Name = string(in.String())
+		case "type_id":
+			out.TypeId = int64(in.Int64())
+		case "type_name":
+			out.TypeName = string(in.String())
+		case "last_seen":
+			if in.IsNull() {
+				in.Skip()
+				out.LastSeen = nil
+			} else {
+				if out.LastSeen == nil {
+					out.LastSeen = new(timestamp.Timestamp)
+				}
+				easyjson6601e8cdDecodeGithubComGolangProtobufPtypesTimestamp(in, &*out.LastSeen)
+			}
+		case "public":
+			out.Public = bool(in.Bool())
+		case "first_seen":
+			if in.IsNull() {
+				in.Skip()
+				out.FirstSeen = nil
+			} else {
+				if out.FirstSeen == nil {
+					out.FirstSeen = new(timestamp.Timestamp)
+				}
+				easyjson6601e8cdDecodeGithubComGolangProtobufPtypesTimestamp(in, &*out.FirstSeen)
+			}
+		case "coordinates":
+			if in.IsNull() {
+				in.Skip()
+				out.Coordinates = nil
+			} else {
+				if out.Coordinates == nil {
+					out.Coordinates = new(staticData.Coordinates)
+				}
+				easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData(in, &*out.Coordinates)
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData5(out *jwriter.Writer, in staticData.Station) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Id != 0 {
+		const prefix string = ",\"id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Id))
+	}
+	if in.Name != "" {
+		const prefix string = ",\"name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
+	}
+	if in.TypeId != 0 {
+		const prefix string = ",\"type_id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.TypeId))
+	}
+	if in.TypeName != "" {
+		const prefix string = ",\"type_name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.TypeName))
+	}
+	if in.LastSeen != nil {
+		const prefix string = ",\"last_seen\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComGolangProtobufPtypesTimestamp(out, *in.LastSeen)
+	}
+	if in.Public {
+		const prefix string = ",\"public\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Public))
+	}
+	if in.FirstSeen != nil {
+		const prefix string = ",\"first_seen\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComGolangProtobufPtypesTimestamp(out, *in.FirstSeen)
+	}
+	if in.Coordinates != nil {
+		const prefix string = ",\"coordinates\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData(out, *in.Coordinates)
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComGolangProtobufPtypesTimestamp(in *jlexer.Lexer, out *timestamp.Timestamp) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "seconds":
+			out.Seconds = int64(in.Int64())
+		case "nanos":
+			out.Nanos = int32(in.Int32())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComGolangProtobufPtypesTimestamp(out *jwriter.Writer, in timestamp.Timestamp) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Seconds != 0 {
+		const prefix string = ",\"seconds\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Seconds))
+	}
+	if in.Nanos != 0 {
+		const prefix string = ",\"nanos\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int32(int32(in.Nanos))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData4(in *jlexer.Lexer, out *staticData.SolarSystem) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "id":
+			out.Id = int64(in.Int64())
+		case "security_status":
+			out.SecurityStatus = float64(in.Float64())
+		case "name":
+			out.Name = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData4(out *jwriter.Writer, in staticData.SolarSystem) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Id != 0 {
+		const prefix string = ",\"id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Id))
+	}
+	if in.SecurityStatus != 0 {
+		const prefix string = ",\"security_status\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.SecurityStatus))
+	}
+	if in.Name != "" {
+		const prefix string = ",\"name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData3(in *jlexer.Lexer, out *staticData.Constellation) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "id":
+			out.Id = int64(in.Int64())
+		case "name":
+			out.Name = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData3(out *jwriter.Writer, in staticData.Constellation) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Id != 0 {
+		const prefix string = ",\"id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Id))
+	}
+	if in.Name != "" {
+		const prefix string = ",\"name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibStaticData2(in *jlexer.Lexer, out *staticData.Region) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "id":
+			out.Id = int64(in.Int64())
+		case "name":
+			out.Name = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibStaticData2(out *jwriter.Writer, in staticData.Region) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.Id != 0 {
+		const prefix string = ",\"id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.Id))
+	}
+	if in.Name != "" {
+		const prefix string = ",\"name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Name))
+	}
+	out.RawByte('}')
+}
+func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(in *jlexer.Lexer, out *AllStructures) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		in.Skip()
@@ -977,9 +912,9 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations10(in *jlexer.
 		for !in.IsDelim('}') {
 			key := string(in.String())
 			in.WantColon()
-			var v6 Structure
-			(v6).UnmarshalEasyJSON(in)
-			(*out)[key] = v6
+			var v1 Structure
+			(v1).UnmarshalEasyJSON(in)
+			(*out)[key] = v1
 			in.WantComma()
 		}
 		in.Delim('}')
@@ -988,20 +923,21 @@ func easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations10(in *jlexer.
 		in.Consumed()
 	}
 }
-func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations10(out *jwriter.Writer, in AllStructures) {
+func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(out *jwriter.Writer, in AllStructures) {
 	if in == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 		out.RawString(`null`)
 	} else {
 		out.RawByte('{')
-		v7First := true
-		for v7Name, v7Value := range in {
-			if !v7First {
+		v2First := true
+		for v2Name, v2Value := range in {
+			if v2First {
+				v2First = false
+			} else {
 				out.RawByte(',')
 			}
-			v7First = false
-			out.String(string(v7Name))
+			out.String(string(v2Name))
 			out.RawByte(':')
-			(v7Value).MarshalEasyJSON(out)
+			(v2Value).MarshalEasyJSON(out)
 		}
 		out.RawByte('}')
 	}
@@ -1010,23 +946,23 @@ func easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations10(out *jwrite
 // MarshalJSON supports json.Marshaler interface
 func (v AllStructures) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations10(&w, v)
+	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v AllStructures) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations10(w, v)
+	easyjson6601e8cdEncodeGithubComEVEToolsStaticDataLibLocations2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *AllStructures) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations10(&r, v)
+	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *AllStructures) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations10(l, v)
+	easyjson6601e8cdDecodeGithubComEVEToolsStaticDataLibLocations2(l, v)
 }

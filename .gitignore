@@ -14,5 +14,7 @@
 .glide/
 
 # Build artifacts and runtime files
+*.pb.go
+
 static-data
 static-data.db

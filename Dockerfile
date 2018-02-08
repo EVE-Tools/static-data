@@ -17,7 +17,7 @@ USER element43:element43
 # Copy build
 COPY static-data static-data
 
-ENV PORT 8000
-EXPOSE 8000
+ENV PORT 43000
+EXPOSE 43000
 
 CMD ["/static-data"]

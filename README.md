@@ -9,12 +9,18 @@ This service for [Element43](https://element-43.com) handles all (bulk) requests
 
 Items are not deleted on expiry as the APIs can be flaky or down for extended periods of time. In case a queried entry is expired the proxy tries to retrieve location info for the entry. If the backing API is down, the expired entry is served as a fallback.
 
+Issues can be filed [here](https://github.com/EVE-Tools/element43). Pull requests can be made in this repo.
+
+## Interface
+The service's gRPC description can be found [here](https://github.com/EVE-Tools/element43/services/staticData/staticData.proto).
+
 ## Installation
 Either use the prebuilt Docker images and pass the appropriate env vars (see below), or:
 
-* Clone this repo into your gopath
-* Run `go get`
-* Run `go build`
+* Install Go, clone this repo into your gopath
+* Run `go get ./...` to fetch the service's dependencies
+* Run `go build` to build the service
+* Run `./static-data` to start the service
 
 
 ## Deployment Info
@@ -23,101 +29,8 @@ Builds and releases are handled by Drone.
 Environment Variable | Default | Description
 --- | --- | ---
 LOG_LEVEL | info | Threshold for logging messages to be printed
-PORT | 8000 | Port for the API to listen on
+PORT | 43000 | Port for the API to listen on
 DB_PATH | static-data.db | Path for storing the persistent location cache
 ESI_HOST | esi.tech.ccp.is | Hostname used for accessing ESI. Change this if you proxy requests. 
 STRUCTURE_HUNT_HOST | stop.hammerti.me.uk | Hostname used for accessing the 3rd party structure hunt API. Change this if you proxy requests.
 DISABLE_TLS | false | Only check this if you're proxying API requests and terminate TLS-connections at the proxy.
-
-## Todo
-- [ ] Seriously, this should not need to exist at all, maybe replace it with something like [Falcor](https://github.com/Netflix/falcor)
-
-## Endpoints
-
-Prefix: `/api/static-data/v1`
-
-URL Pattern | Description
---- | ---
-`/region/location/` | POST a JSON object with a key called `locationIDs` containing all the IDs you need info for. It will return the info. Magic!
-
-Example output for `{ "locationIDs": [60003760, 30003271, 1022449681307] }`:
-```json
-{
-  "30003271": {
-    "station": {
-      "id": 0,
-      "name": "",
-      "position": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      }
-    },
-    "region": {
-      "id": 10000041,
-      "name": "Syndicate"
-    },
-    "solarSystem": {
-      "id": 30003271,
-      "securityStatus": -0.019552214071154594,
-      "name": "Poitot"
-    },
-    "constellation": {
-      "id": 20000478,
-      "name": "Z-6NQ6"
-    }
-  },
-  "60003760": {
-    "station": {
-      "id": 60003760,
-      "name": "Jita IV - Moon 4 - Caldari Navy Assembly Plant",
-      "position": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      }
-    },
-    "region": {
-      "id": 10000002,
-      "name": "The Forge"
-    },
-    "solarSystem": {
-      "id": 30000142,
-      "securityStatus": 0.9459131360054016,
-      "name": "Jita"
-    },
-    "constellation": {
-      "id": 20000020,
-      "name": "Kimotoro"
-    }
-  },
-  "1022449681307": {
-    "station": {
-      "id": 1022449681307,
-      "name": "Safshela - АТАС",
-      "typeId": 35832,
-      "typeName": "Astrahus",
-      "lastSeen": "2017-01-04T13:03:07Z",
-      "firstSeen": "2016-11-09T20:31:52Z",
-      "position": {
-        "x": 982752948061,
-        "y": 135584807000,
-        "z": 3980081299879
-      }
-    },
-    "region": {
-      "id": 10000049,
-      "name": "Khanid"
-    },
-    "solarSystem": {
-      "id": 30003879,
-      "securityStatus": 0.6676156520843506,
-      "name": "Safshela"
-    },
-    "constellation": {
-      "id": 20000566,
-      "name": "Amdimmah"
-    }
-  }
-}
-```
