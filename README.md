@@ -19,6 +19,7 @@ Either use the prebuilt Docker images and pass the appropriate env vars (see bel
 
 * Install Go, clone this repo into your gopath
 * Run `go get ./...` to fetch the service's dependencies
+* Run `bash generateProto.sh` to generate the necessary gRPC-related code
 * Run `go build` to build the service
 * Run `./static-data` to start the service
 
