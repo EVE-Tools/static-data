@@ -4,10 +4,10 @@ workspace:
 
 pipeline:
   build:
-    image: golang:alpine
+    image: golang:alpine3.7
     commands:
       - apk update
-      - apk add bash git protobuf
+      - apk add bash git protobuf protobuf-dev
       - go get ./...
       - bash generateProto.sh
       - go build
