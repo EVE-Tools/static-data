@@ -19,11 +19,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Server is a gRPC server serving location requests
-type Server struct{}
-
 // GetLocations returns location info for a given list.
-func (server *Server) GetLocations(context context.Context, request *pb.GetLocationsRequest) (*pb.GetLocationsResponse, error) {
+func GetLocations(context context.Context, request *pb.GetLocationsRequest) (*pb.GetLocationsResponse, error) {
 	locations, _ := getLocations(request.GetLocationIds())
 
 	return &pb.GetLocationsResponse{Locations: locations}, nil

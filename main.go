@@ -13,7 +13,9 @@ import (
 
 	"github.com/EVE-Tools/element43/go/lib/transport"
 	"github.com/EVE-Tools/static-data/lib/locations"
+	"github.com/EVE-Tools/static-data/lib/server"
 	pb "github.com/EVE-Tools/static-data/lib/staticData"
+	"github.com/EVE-Tools/static-data/lib/types"
 
 	"github.com/boltdb/bolt"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
@@ -100,6 +102,8 @@ func startEndpoint(config Config) {
 		url,
 		db)
 
+	types.Initialize(esiClient, db)
+
 	var opts []grpc.ServerOption
 	var logOpts []grpc_logrus.Option
 	opts = append(opts, grpc_middleware.WithUnaryServerChain(
@@ -113,6 +117,6 @@ func startEndpoint(config Config) {
 	}
 
 	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterStaticDataServer(grpcServer, &locations.Server{})
+	pb.RegisterStaticDataServer(grpcServer, &server.Server{})
 	grpcServer.Serve(listener)
 }
